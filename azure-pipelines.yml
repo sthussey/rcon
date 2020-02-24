@@ -9,8 +9,13 @@ pr:
 pool:
   vmImage: 'ubuntu-latest'
 
-container: rust:stretch
-
 steps:
+- script: 'curl https://sh.rustup.rs -sSf | sh -s'
+  displayName: 'Install Rust Toolchain'
+
 - script: find $(Build.SourcesDirectory)/src -name '*.rs' -exec rustfmt --check {} \;
   displayName: 'Rust Format Check'
+
+- script: 'cargo check'
+  workingDirectory: $(Build.SourcesDirectory)
+  displayName: 'Rust Build Check'
