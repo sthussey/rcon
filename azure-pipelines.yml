@@ -13,7 +13,7 @@ steps:
 - script: 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
   displayName: 'Install Rust Toolchain'
 
-- script: find $(Build.SourcesDirectory)/src -name '*.rs' -exec rustfmt --check {} \;
+- script: find $(Build.SourcesDirectory)/src -name '*.rs' -exec rustfmt --check {} +
   displayName: 'Rust Format Check'
 
 - script: 'cargo check'
