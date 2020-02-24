@@ -1,0 +1,21 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+pr:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
+  displayName: 'Install Rust Toolchain'
+
+- script: find $(Build.SourcesDirectory)/src -name '*.rs' -exec rustfmt --check {} +
+  displayName: 'Rust Format Check'
+
+- script: 'cargo check'
+  workingDirectory: $(Build.SourcesDirectory)
+  displayName: 'Rust Build Check'
