@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: 'curl https://sh.rustup.rs -sSf | sh -s'
+- script: 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
   displayName: 'Install Rust Toolchain'
 
 - script: find $(Build.SourcesDirectory)/src -name '*.rs' -exec rustfmt --check {} \;
