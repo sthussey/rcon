@@ -76,37 +76,41 @@ fn main() {
                             .help("TOML file specifying the run context.")
                             .takes_value(true)).get_matches();
 
-    let config_contents = load_config(args.value_of("FILE").unwrap());
-    let config_contents = match config_contents {
-        Err(err) => {
-            println!("Error reading config file: {}", err);
-            std::process::exit(1);
-        },
-        Ok(c) => c,
-    };
+    let config = load_config(args.value_of("FILE").unwrap());
 
-    let parsed_config = parse_config(&config_contents);
-
-    match parsed_config {
-        Ok(config) => println!("Running {}", config.run),
+    let runctx = match config {
+        Ok(config) => RunContext { cfg: config },
         Err(err) => {
             println!("Error parsing config: {}", err);
             std::process::exit(1);
         },
     };
+
+    runctx.run();
 }
 
-// Parse a TOML formatted specification file
-fn parse_config(cfg: &Vec<u8>) -> Result<Config, de::Error> {
-    let config = toml::from_slice(cfg);
-    return config;
-}
-
-// Find and read a config file
-fn load_config(file_path: &str) -> Result<Vec<u8>, io::Error> {
+// Find, read, and parse a config file
+fn load_config(file_path: &str) -> Result<Config, RconError> {
     let path = Path::new(file_path);
     let mut file = File::open(&path)?;
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)?;
-    return Ok(contents);
+    let config = toml::from_slice(&contents);
+    match config {
+        Ok(c) => Ok(c),
+        Err(e) => Err(RconError::from(e)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn config_file_not_found() -> Result<(), String> {
+        let cfg = super::load_config("foo");
+        match cfg {
+            Err(e) => println!("load_config erred on file not found."),
+            Ok(v) => return Err(String::from("load_config did not catch file not found.")),
+        };
+        Ok(())
+    }
 }
