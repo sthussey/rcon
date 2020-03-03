@@ -68,7 +68,7 @@ fn main() {
                         .version("0.1")
                         .author("Scott Hussey @sthussey")
                         .about("Build runtime contexts for application testing.")
-                        .arg(Arg::with_name("file")
+                        .arg(Arg::with_name("FILE")
                             .short("f")
                             .long("file")
                             .value_name("FILE")
