@@ -1,13 +1,13 @@
+use clap::{App, Arg};
 use serde_derive::Deserialize;
-use clap::{Arg, App};
-use std::path::Path;
-use std::fs::File;
-use std::io::Read;
 use std::error::Error;
-use std::process::Command;
 use std::fmt;
-use toml::de;
+use std::fs::File;
 use std::io;
+use std::io::Read;
+use std::path::Path;
+use std::process::Command;
+use toml::de;
 
 #[derive(Debug)]
 struct RconError {
@@ -16,7 +16,9 @@ struct RconError {
 
 impl RconError {
     fn new(msg: &str) -> RconError {
-        RconError{msg: msg.to_string()}
+        RconError {
+            msg: msg.to_string(),
+        }
     }
 }
 
@@ -55,7 +57,7 @@ struct Config {
 
 // The run context. It will be built up via Builder pattern
 struct RunContext {
-    cfg: Config
+    cfg: Config,
 }
 
 impl RunContext {
@@ -75,16 +77,19 @@ impl RunContext {
 
 fn main() {
     let args = App::new("rcon - run context")
-                        .version("0.1")
-                        .author("Scott Hussey @sthussey")
-                        .about("Build runtime contexts for application testing.")
-                        .arg(Arg::with_name("FILE")
-                            .short("f")
-                            .long("file")
-                            .value_name("FILE")
-                            .required(true)
-                            .help("TOML file specifying the run context.")
-                            .takes_value(true)).get_matches();
+        .version("0.1")
+        .author("Scott Hussey @sthussey")
+        .about("Build runtime contexts for application testing.")
+        .arg(
+            Arg::with_name("FILE")
+                .short("f")
+                .long("file")
+                .value_name("FILE")
+                .required(true)
+                .help("TOML file specifying the run context.")
+                .takes_value(true),
+        )
+        .get_matches();
 
     let config = load_config(args.value_of("FILE").unwrap());
 
@@ -93,7 +98,7 @@ fn main() {
         Err(err) => {
             println!("Error parsing config: {}", err);
             std::process::exit(1);
-        },
+        }
     };
 
     std::process::exit(runctx.run());
