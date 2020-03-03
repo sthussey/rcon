@@ -4,6 +4,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::Read;
 use std::error::Error;
+use std::process::Command;
 use std::fmt;
 use toml::de;
 use std::io;
@@ -58,8 +59,17 @@ struct RunContext {
 }
 
 impl RunContext {
-    fn run(&self) -> () {
-        println!("Running {}.", self.cfg.run)
+    fn run(&self) -> i32 {
+        println!("Running {}.", self.cfg.run);
+        let mut cmd = Command::new(&self.cfg.run);
+        if let Some(d) = &self.cfg.wd {
+            cmd.current_dir(d);
+        };
+        let output = cmd.output();
+        match output {
+            Ok(_r) => 0,
+            Err(_e) => 1,
+        }
     }
 }
 
@@ -86,7 +96,7 @@ fn main() {
         },
     };
 
-    runctx.run();
+    std::process::exit(runctx.run());
 }
 
 // Find, read, and parse a config file
