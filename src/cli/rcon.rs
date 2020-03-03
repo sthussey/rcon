@@ -57,6 +57,12 @@ struct RunContext {
     cfg: Config
 }
 
+impl RunContext {
+    fn run(&self) -> () {
+        println!("Running {}.", self.cfg.run)
+    }
+}
+
 fn main() {
     let args = App::new("rcon - run context")
                         .version("0.1")
