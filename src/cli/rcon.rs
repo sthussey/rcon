@@ -3,8 +3,45 @@ use clap::{Arg, App};
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
+use std::error::Error;
+use std::fmt;
 use toml::de;
 use std::io;
+
+#[derive(Debug)]
+struct RconError {
+    msg: String,
+}
+
+impl RconError {
+    fn new(msg: &str) -> RconError {
+        RconError{msg: msg.to_string()}
+    }
+}
+
+impl fmt::Display for RconError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl Error for RconError {
+    fn description(&self) -> &str {
+        &self.msg
+    }
+}
+
+impl From<io::Error> for RconError {
+    fn from(err: io::Error) -> Self {
+        RconError::new(&std::format!("I/O Error: {}", err.description()))
+    }
+}
+
+impl From<de::Error> for RconError {
+    fn from(err: de::Error) -> Self {
+        RconError::new(&std::format!("Deserialize Error: {}", err.description()))
+    }
+}
 
 #[derive(Deserialize)]
 /// Specification for a run context
