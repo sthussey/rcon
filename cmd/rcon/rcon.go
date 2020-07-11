@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sthussey/rcon/internal"
 	"os"
+
+	"github.com/sthussey/rcon/internal"
 )
 
 func main() {
