@@ -14,8 +14,8 @@ type RunConfig struct {
 }
 
 type ProcessContext struct {
-	RunPath    string `json: "runpath"`
-	WorkingDir string `json: "workingdir"`
+	RunPath    string `json:"runPath"`
+	WorkingDir string `json:"workingDir"`
 }
 
 func NewRunConfig(p string) RunConfig {
