@@ -85,6 +85,5 @@ func envParseConfig(src map[string]string) (*ProcessContext, error) {
 }
 
 func (rc *RunConfig) loadConfig() error {
-	rc.selectParser()
-	return nil
+	return rc.selectParser()
 }
