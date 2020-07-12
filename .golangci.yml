@@ -1,3 +1,10 @@
 linters-settings:
   goimports:
     local-prefixes: github.com/sthussey/rcon
+linters:
+  enable:
+    - gofmt
+    - gosec
+    - gocyclo
+    - goimports
+    - gochecknoglobals
