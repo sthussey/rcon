@@ -4,7 +4,7 @@
 ## Linter GitHub Actions ##
 ###########################
 ###########################
-name: Lint Code Base
+name: Unit tests
 
 #
 # Documentation:
@@ -24,9 +24,9 @@ on:
 # Set the Job #
 ###############
 jobs:
-  build:
+  test:
     # Name the Job
-    name: Lint Code Base
+    name: Run unit tests
     # Set the agent to run on
     runs-on: ubuntu-latest
 
