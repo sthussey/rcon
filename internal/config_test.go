@@ -19,8 +19,8 @@ func TestJsonLoad(t *testing.T) {
 func TestEnvLoad(t *testing.T) {
 	sample := make(map[string]string)
 	sample["RCON_RUNPATH"] = getContextValues("RunPath")
-
 	sample["RCON_WORKINGDIR"] = "/tmp"
+
 	result, err := envParseConfig(sample)
 	if err != nil {
 		t.Errorf("Valid environment load failed: %v", err)
@@ -44,9 +44,9 @@ func getContextValues(k string) string {
 
 func validateContext(t *testing.T, pctx *ProcessContext) {
 	if pctx.RunPath != getContextValues("RunPath") {
-		t.Errorf("JSON Load - Context has wrong RunPath - Found %s, expected %s", pctx.RunPath, getContextValues("RunPath"))
+		t.Errorf("Context has wrong RunPath - Found %s, expected %s", pctx.RunPath, getContextValues("RunPath"))
 	}
 	if pctx.WorkingDir != getContextValues("WorkingDir") {
-		t.Errorf("JSON Load - Context has wrong WorkingDir - Found %s, expected %s", pctx.WorkingDir, getContextValues("WorkingDir"))
+		t.Errorf("Context has wrong WorkingDir - Found %s, expected %s", pctx.WorkingDir, getContextValues("WorkingDir"))
 	}
 }

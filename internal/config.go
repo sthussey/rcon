@@ -9,8 +9,8 @@ import (
 )
 
 type RunConfig struct {
-	configPath string
-	runContext ProcessContext
+	ConfigPath string
+	RunContext ProcessContext
 }
 
 type ProcessContext struct {
@@ -21,37 +21,29 @@ type ProcessContext struct {
 func NewRunConfig(p string) RunConfig {
 	var rc RunConfig
 	if p != "" {
-		rc = RunConfig{configPath: p}
+		rc = RunConfig{ConfigPath: p}
 	} else {
 		rc = RunConfig{}
 	}
+    selectParser(&rc)
 	return rc
 }
 
-func (rc RunConfig) Run() error {
-	err := rc.loadConfig()
-	if err != nil {
-		return fmt.Errorf("Error parsing config: %w", err)
-	}
-	return nil
-}
-
-func (rc RunConfig) ConfigPath() string {
-	return rc.configPath
-}
-
-func (rc *RunConfig) selectParser() error {
-	if rc.ConfigPath() != "" {
-		json, err := ioutil.ReadFile(rc.ConfigPath())
+func selectParser(rc *RunConfig) error {
+	if rc.ConfigPath != "" {
+        fmt.Printf("Loading config from %s\n", rc.ConfigPath);
+		json, err := ioutil.ReadFile(rc.ConfigPath)
 		if err != nil {
-			return fmt.Errorf("Error opening config file %s: %w", rc.ConfigPath(), err)
+			return fmt.Errorf("Error opening config file %s: %w", rc.ConfigPath, err)
 		}
 		var pctx *ProcessContext
 		pctx, err = jsonParseConfig(json)
 		if err != nil {
-			return fmt.Errorf("Error parsing config file %s: %w", rc.ConfigPath(), err)
-		}
-		rc.runContext = *pctx
+			return fmt.Errorf("Error parsing config file %s: %w", rc.ConfigPath, err)
+		} else {
+            fmt.Printf("Loading config: \n%v\n", pctx);
+        }
+		rc.RunContext = *pctx
 	} else {
 		envmap := make(map[string]string)
 		for _, v := range os.Environ() {
@@ -63,7 +55,7 @@ func (rc *RunConfig) selectParser() error {
 		if err != nil {
 			return fmt.Errorf("Error parsing environment config: %w", err)
 		}
-		rc.runContext = *pctx
+		rc.RunContext = *pctx
 	}
 	return nil
 }
@@ -82,8 +74,4 @@ func envParseConfig(src map[string]string) (*ProcessContext, error) {
 	pctx.RunPath = src["RCON_RUNPATH"]
 	pctx.WorkingDir = src["RCON_WORKINGDIR"]
 	return &pctx, nil
-}
-
-func (rc *RunConfig) loadConfig() error {
-	return rc.selectParser()
 }
