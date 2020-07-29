@@ -93,11 +93,17 @@ func (p GenericPipeline) Feed(ctx context.Context, c chan<- []byte) {
 		buf := make([]byte, p.bufSize)
 		l, err := p.source.Read(buf)
 		if err == io.EOF {
+			fmt.Printf("Source EOF, starting pipeline shutdown.\n")
 			break
 		} else if err != nil {
 			fmt.Printf("Error reading source - %v\n", err)
 		} else {
-			c <- buf[0:l]
+			select {
+				case <-ctx.Done():
+					fmt.Printf("Context cancelled (%v), closing pipeline.\n", ctx.Err())
+					break
+				case c <- buf[0:l]:
+			}
 		}
 	}
 	close(c)
@@ -107,15 +113,14 @@ func (p GenericPipeline) Drain(ctx context.Context, c <-chan []byte, drained cha
 	for {
 		select {
 		case <-ctx.Done():
+			fmt.Printf("Context cancelled (%v), closing pipeline.\n", ctx.Err())
 			drained <- false
-			close(drained)
-			return
+			break
 		case buf := <-c:
 			if buf == nil {
 				fmt.Printf("Ingress channel closed, pipeline fully drained. Exiting.\n")
 				drained <- true
-				close(drained)
-				return
+				break
 			}
 			_, err := p.sink.Write(buf)
 			if err != nil {
@@ -123,24 +128,32 @@ func (p GenericPipeline) Drain(ctx context.Context, c <-chan []byte, drained cha
 			}
 		}
 	}
+	close(drained)
 }
 
 func (ps GenericPipeSegment) Start(ctx context.Context, in <-chan []byte, out chan<- []byte) {
 	for {
-		buf, ok := <-in
-		if !ok {
-			fmt.Printf("Upstream pipe closed, propagating shutdown.\n")
-			close(out)
-			break
-		} else {
-			var err error
-			buf, err = ps.processor(buf)
-			if err != nil {
-				fmt.Printf("Error running processor: %v\n", err)
-				continue
-			}
-			out <- buf
+		select {
+			case <-ctx.Done():
+				fmt.Printf("Context cancelled(%v), closing pipeline segment.\n", ctx.Err())
+				close(out)
+				return
+			case buf, ok := <-in:
+				if !ok {
+					fmt.Printf("Upstream pipe closed, propagating shutdown.\n")
+					close(out)
+					return
+				} else {
+					var err error
+					buf, err = ps.processor(buf)
+					if err != nil {
+						fmt.Printf("Error running processor: %v\n", err)
+						continue
+					}
+					out <- buf
+				}
 		}
 
 	}
+	close(out)
 }
