@@ -13,12 +13,6 @@ func main() {
     flag.Parse();
     //debug := flag.Bool("d", false, "Turn on debug logging.")
 	rc := internal.NewRunConfig(*configPath)
-	err := (&rc).Load()
-
-	if err != nil {
-		fmt.Printf("Error loading context: %v", err)
-		os.Exit(1)
-	}
 
 	r := internal.NewLocalRunner(nil)
 
