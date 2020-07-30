@@ -20,17 +20,17 @@ func NewLocalRunner(cfg map[string]string) ProcessRunner {
 func (r LocalRunner) ValidateContext(p ProcessContext, errNoCap bool) []string {
 	failures := make([]string, 0)
 
-    msg := validateRunpath(p.RunPath);
+	msg := validateRunpath(p.RunPath)
 
-    if ( msg != "" ){
-        failures = append(failures, msg);
-    }
+	if msg != "" {
+		failures = append(failures, msg)
+	}
 
-    msg = validateWorkingdir(p.WorkingDir)
+	msg = validateWorkingDir(p.WorkingDir)
 
-    if ( msg != "" ){
-        failures = append(failures, msg);
-    }
+	if msg != "" {
+		failures = append(failures, msg)
+	}
 
 	return failures
 }
@@ -41,31 +41,31 @@ func validateRunpath(p string) string {
 	} else {
 		rpstat, err := os.Stat(p)
 		if err != nil {
-			return fmt.Sprintf("Error stating RunPath %s: %v", p.RunPath, err)
+			return fmt.Sprintf("Error stating RunPath %s: %v", p, err)
 		} else {
 			perms := rpstat.Mode().Perm()
 			if (perms & 0111) == 0 {
-				return fmt.Sprintf("RunPath %s found, but not executable.", p.RunPath)
+				return fmt.Sprintf("RunPath %s found, but not executable.", p)
 			}
 		}
 	}
 
-    return ""
+	return ""
 }
 
 func validateWorkingDir(d string) string {
 	if d != "" {
-		wdstat, err := os.Stat(p.WorkingDir)
+		wdstat, err := os.Stat(d)
 		if err != nil {
-			return fmt.Sprintf("Error stating WorkingDir %s: %v", p.WorkingDir, err)
+			return fmt.Sprintf("Error stating WorkingDir %s: %v", d, err)
 		} else {
 			if !wdstat.IsDir() {
-				return fmt.Sprintf("WorkingDir %s found, but not a directory.", p.WorkingDir)
+				return fmt.Sprintf("WorkingDir %s found, but not a directory.", d)
 			}
 		}
 	}
 
-    return ""
+	return ""
 }
 
 func (r LocalRunner) ExecuteContext(pctx ProcessContext) bool {

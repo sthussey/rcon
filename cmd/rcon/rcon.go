@@ -10,13 +10,12 @@ import (
 
 func main() {
 	configPath := flag.String("c", "", "Path to context config JSON file.")
-    flag.Parse();
-    //debug := flag.Bool("d", false, "Turn on debug logging.")
-	rc := internal.NewRunConfig(*configPath)
-	err := (&rc).Load()
+	flag.Parse()
+	//debug := flag.Bool("d", false, "Turn on debug logging.")
+	rc, err := internal.NewRunConfig(*configPath)
 
 	if err != nil {
-		fmt.Printf("Error loading context: %v", err)
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
