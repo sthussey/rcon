@@ -18,20 +18,24 @@ type ProcessContext struct {
 	WorkingDir string `json:"workingDir"`
 }
 
-func NewRunConfig(p string) RunConfig {
+func NewRunConfig(p string) (RunConfig, error) {
 	var rc RunConfig
 	if p != "" {
 		rc = RunConfig{ConfigPath: p}
 	} else {
 		rc = RunConfig{}
 	}
-    selectParser(&rc)
-	return rc
+	err := selectParser(&rc)
+	if err != nil {
+		return rc, err
+	}
+
+	return rc, nil
 }
 
 func selectParser(rc *RunConfig) error {
 	if rc.ConfigPath != "" {
-        fmt.Printf("Loading config from %s\n", rc.ConfigPath);
+		fmt.Printf("Loading config from %s\n", rc.ConfigPath)
 		json, err := ioutil.ReadFile(rc.ConfigPath)
 		if err != nil {
 			return fmt.Errorf("Error opening config file %s: %w", rc.ConfigPath, err)
@@ -41,8 +45,8 @@ func selectParser(rc *RunConfig) error {
 		if err != nil {
 			return fmt.Errorf("Error parsing config file %s: %w", rc.ConfigPath, err)
 		} else {
-            fmt.Printf("Loading config: \n%v\n", pctx);
-        }
+			fmt.Printf("Loading config: \n%v\n", pctx)
+		}
 		rc.RunContext = *pctx
 	} else {
 		envmap := make(map[string]string)

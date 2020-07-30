@@ -20,17 +20,17 @@ func NewLocalRunner(cfg map[string]string) ProcessRunner {
 func (r LocalRunner) ValidateContext(p ProcessContext, errNoCap bool) []string {
 	failures := make([]string, 0)
 
-    msg := validateRunpath(p.RunPath);
+	msg := validateRunpath(p.RunPath)
 
-    if ( msg != "" ){
-        failures = append(failures, msg);
-    }
+	if msg != "" {
+		failures = append(failures, msg)
+	}
 
-    msg = validateWorkingDir(p.WorkingDir)
+	msg = validateWorkingDir(p.WorkingDir)
 
-    if ( msg != "" ){
-        failures = append(failures, msg);
-    }
+	if msg != "" {
+		failures = append(failures, msg)
+	}
 
 	return failures
 }
@@ -50,7 +50,7 @@ func validateRunpath(p string) string {
 		}
 	}
 
-    return ""
+	return ""
 }
 
 func validateWorkingDir(d string) string {
@@ -65,7 +65,7 @@ func validateWorkingDir(d string) string {
 		}
 	}
 
-    return ""
+	return ""
 }
 
 func (r LocalRunner) ExecuteContext(pctx ProcessContext) bool {

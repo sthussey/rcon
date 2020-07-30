@@ -26,7 +26,7 @@ type Pipeline interface {
 }
 
 type PipelineWrapper struct {
-    *GenericPipeline
+	*GenericPipeline
 }
 
 type GenericPipeline struct {
@@ -99,10 +99,10 @@ func (p GenericPipeline) Feed(ctx context.Context, c chan<- []byte) {
 			fmt.Printf("Error reading source - %v\n", err)
 		} else {
 			select {
-				case <-ctx.Done():
-					fmt.Printf("Context cancelled (%v), closing pipeline.\n", ctx.Err())
-					break
-				case c <- buf[0:l]:
+			case <-ctx.Done():
+				fmt.Printf("Context cancelled (%v), closing pipeline.\n", ctx.Err())
+				break
+			case c <- buf[0:l]:
 			}
 		}
 	}
@@ -128,32 +128,31 @@ func (p GenericPipeline) Drain(ctx context.Context, c <-chan []byte, drained cha
 			}
 		}
 	}
-	close(drained)
+
 }
 
 func (ps GenericPipeSegment) Start(ctx context.Context, in <-chan []byte, out chan<- []byte) {
 	for {
 		select {
-			case <-ctx.Done():
-				fmt.Printf("Context cancelled(%v), closing pipeline segment.\n", ctx.Err())
+		case <-ctx.Done():
+			fmt.Printf("Context cancelled(%v), closing pipeline segment.\n", ctx.Err())
+			close(out)
+			return
+		case buf, ok := <-in:
+			if !ok {
+				fmt.Printf("Upstream pipe closed, propagating shutdown.\n")
 				close(out)
 				return
-			case buf, ok := <-in:
-				if !ok {
-					fmt.Printf("Upstream pipe closed, propagating shutdown.\n")
-					close(out)
-					return
-				} else {
-					var err error
-					buf, err = ps.processor(buf)
-					if err != nil {
-						fmt.Printf("Error running processor: %v\n", err)
-						continue
-					}
-					out <- buf
+			} else {
+				var err error
+				buf, err = ps.processor(buf)
+				if err != nil {
+					fmt.Printf("Error running processor: %v\n", err)
+					continue
 				}
+				out <- buf
+			}
 		}
 
 	}
-	close(out)
 }
