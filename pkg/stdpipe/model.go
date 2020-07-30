@@ -14,9 +14,6 @@ type PipeSegment interface {
 }
 
 type GenericPipeSegment struct {
-	ctx       context.Context
-	ingress   <-chan []byte
-	egress    chan<- []byte
 	processor func(in []byte) ([]byte, error)
 }
 
@@ -48,13 +45,13 @@ func NewPipeline(bufSize int) (Pipeline, error) {
 		return nil, fmt.Errorf("Invalid buffer size %d.", bufSize)
 	}
 
-    gp := GenericPipeline{bufSize: bufSize, segments: make([]PipeSegment, 0)}
+	gp := GenericPipeline{bufSize: bufSize, segments: make([]PipeSegment, 0)}
 	return PipelineWrapper{GenericPipeline: &gp}, nil
 }
 
 func (p *GenericPipeline) Add(s PipeSegment) error {
 	p.segments = append(p.segments, s)
-    return nil
+	return nil
 }
 
 func (p *GenericPipeline) SetBufferSize(s int) error {
@@ -65,7 +62,7 @@ func (p *GenericPipeline) SetBufferSize(s int) error {
 func (p *GenericPipeline) Process(ctx context.Context, source io.Reader, sink io.Writer) chan bool {
 	p.source = source
 	p.sink = sink
-    drained := make(chan bool)
+	drained := make(chan bool)
 
 	if len(p.segments) == 0 {
 		/* Channel buffer size should be configurable */
@@ -94,13 +91,19 @@ func (p *GenericPipeline) Process(ctx context.Context, source io.Reader, sink io
 func (p GenericPipeline) Feed(ctx context.Context, c chan<- []byte) {
 	for {
 		buf := make([]byte, p.bufSize)
-		_, err := p.source.Read(buf)
+		l, err := p.source.Read(buf)
 		if err == io.EOF {
+			fmt.Printf("Source EOF, starting pipeline shutdown.\n")
 			break
 		} else if err != nil {
 			fmt.Printf("Error reading source - %v\n", err)
 		} else {
-			c <- buf
+			select {
+				case <-ctx.Done():
+					fmt.Printf("Context cancelled (%v), closing pipeline.\n", ctx.Err())
+					break
+				case c <- buf[0:l]:
+			}
 		}
 	}
 	close(c)
@@ -110,13 +113,14 @@ func (p GenericPipeline) Drain(ctx context.Context, c <-chan []byte, drained cha
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			fmt.Printf("Context cancelled (%v), closing pipeline.\n", ctx.Err())
+			drained <- false
+			break
 		case buf := <-c:
 			if buf == nil {
 				fmt.Printf("Ingress channel closed, pipeline fully drained. Exiting.\n")
-                drained<- true
-                close(drained)
-				return
+				drained <- true
+				break
 			}
 			_, err := p.sink.Write(buf)
 			if err != nil {
@@ -124,4 +128,32 @@ func (p GenericPipeline) Drain(ctx context.Context, c <-chan []byte, drained cha
 			}
 		}
 	}
+	close(drained)
+}
+
+func (ps GenericPipeSegment) Start(ctx context.Context, in <-chan []byte, out chan<- []byte) {
+	for {
+		select {
+			case <-ctx.Done():
+				fmt.Printf("Context cancelled(%v), closing pipeline segment.\n", ctx.Err())
+				close(out)
+				return
+			case buf, ok := <-in:
+				if !ok {
+					fmt.Printf("Upstream pipe closed, propagating shutdown.\n")
+					close(out)
+					return
+				} else {
+					var err error
+					buf, err = ps.processor(buf)
+					if err != nil {
+						fmt.Printf("Error running processor: %v\n", err)
+						continue
+					}
+					out <- buf
+				}
+		}
+
+	}
+	close(out)
 }
