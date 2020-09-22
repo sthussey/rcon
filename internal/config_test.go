@@ -6,6 +6,7 @@ import (
 )
 
 func TestJsonLoad(t *testing.T) {
+	t.Parallel()
 	runpath := getContextValues("RunPath")
 	workingdir := getContextValues("WorkingDir")
 	sample := []byte(fmt.Sprintf("{\"runpath\": \"%s\", \"workingdir\": \"%s\"}", runpath, workingdir))
@@ -17,6 +18,7 @@ func TestJsonLoad(t *testing.T) {
 }
 
 func TestEnvLoad(t *testing.T) {
+	t.Parallel()
 	sample := make(map[string]string)
 	sample["RCON_RUNPATH"] = getContextValues("RunPath")
 	sample["RCON_WORKINGDIR"] = "/tmp"

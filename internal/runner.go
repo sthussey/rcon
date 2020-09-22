@@ -2,9 +2,10 @@ package internal
 
 import (
 	"fmt"
+	"log"
 	"os"
-    "runtime"
-    "log"
+	"runtime"
+	"strings"
 )
 
 type ProcessRunner interface {
@@ -29,6 +30,12 @@ func (r LocalRunner) ValidateContext(p ProcessContext, errNoCap bool) []string {
 	}
 
 	msg = validateWorkingDir(p.WorkingDir)
+
+	if msg != "" {
+		failures = append(failures, msg)
+	}
+
+	msg = validateEnvironment(p.Environment)
 
 	if msg != "" {
 		failures = append(failures, msg)
@@ -70,38 +77,76 @@ func validateWorkingDir(d string) string {
 	return ""
 }
 
+func validateEnvironment(varMap map[string]string) string {
+	for k := range varMap {
+		if strings.Contains(k, "=") {
+			return "Environment variable keys cannot contain '='"
+		}
+	}
+	return ""
+}
+
+func renderEnvironment(varMap map[string]string, prop []string) []string {
+	var procEnv []string = make([]string, 0)
+	for _, v := range prop {
+		// Here check if the declaritive environment contains
+		// a propagated variable. If do, do not propagate. This
+		// allows declaritive intent to unset a variable
+		splitVal := strings.SplitN(v, "=", 2)
+		_, ok := varMap[splitVal[0]]
+		if !ok {
+			procEnv = append(procEnv, v)
+		}
+	}
+	for k, v := range varMap {
+		if v != "" {
+			procEnv = append(procEnv, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+	return procEnv
+}
+
 func (r LocalRunner) ExecuteContext(pctx ProcessContext) bool {
-    doneChan := make(chan interface{})
-    go executeInIsolatedThread(doneChan, pctx)
-    <-doneChan
+	doneChan := make(chan interface{})
+	go executeInIsolatedThread(doneChan, pctx)
+	<-doneChan
 	return true
 }
 
 func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext) {
-    runtime.LockOSThread()
-    defer close(done)
-    scratchPath, err := initMountNamespace()
-    if err != nil {
-        log.Printf("Error initializing mount namespace: %v", err)
-        return
-    }
-    setupMounts(scratchPath, pctx.Files)
-    defer cleanMountNamespace(scratchPath, pctx.Files)
-	pa := os.ProcAttr{Dir: pctx.WorkingDir, Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}}
+	runtime.LockOSThread()
+	defer close(done)
+	scratchPath, err := initMountNamespace()
+	if err != nil {
+		log.Printf("Error initializing mount namespace: %v", err)
+		return
+	}
+	setupMounts(scratchPath, pctx.Files)
+	defer cleanMountNamespace(scratchPath, pctx.Files)
+	pa := os.ProcAttr{
+		Dir:   pctx.WorkingDir,
+		Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
+		Env: renderEnvironment(pctx.Environment,
+			func() []string {
+				if pctx.PropEnv {
+					return os.Environ()
+				}
+				return nil
+			}())}
+
 	p, err := os.StartProcess(pctx.RunPath, []string{pctx.RunPath}, &pa)
 	if err != nil {
-        log.Printf("Error starting tended process: %v", err)
+		log.Printf("Error starting tended process: %v", err)
 		return
 	}
 
 	var ps *os.ProcessState
 	ps, _ = p.Wait()
 
-    if !ps.Success() {
-        log.Printf("Tended process exitted unsuccesfully.")
-    }
+	if !ps.Success() {
+		log.Printf("Tended process exitted unsuccesfully.")
+	}
 
-    // Deliberately leave thread locked so it isn't used by any other goroutines
-    // and is instead kileld
-    return
+	// Deliberately leave thread locked so it isn't used by any other goroutines
+	// and is instead kileld
 }
