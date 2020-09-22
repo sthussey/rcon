@@ -11,17 +11,29 @@ import (
 type RunConfig struct {
 	ConfigPath string
 	RunContext ProcessContext
+	Config     ProcWrapConfig
+}
+
+type ProcWrapConfig struct {
+	Network ProcWrapNetwork `json:"network"`
+}
+
+type ProcWrapNetwork struct {
+	NamespaceCidr string   `json:"namespaceCidr"`
+	DnsServers    []string `json:"dnsServers"`
 }
 
 type ProcessContext struct {
-	RunPath     string `json:"runPath"`
-	WorkingDir  string `json:"workingDir"`
-    Files       []FileOverlay `json:"files"`
+	RunPath     string            `json:"runPath"`
+	WorkingDir  string            `json:"workingDir"`
+	Environment map[string]string `json:"envVars"`
+	PropEnv     bool              `json:"propagateEnv"`
+	Files       []FileOverlay     `json:"files"`
 }
 
 type FileOverlay struct {
-    Path        string `json:"path"`
-    Content     string `json:"content"`
+	Path    string `json:"path"`
+	Content string `json:"content"`
 }
 
 func NewRunConfig(p string) (RunConfig, error) {
