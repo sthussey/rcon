@@ -14,13 +14,9 @@ type RunConfig struct {
 	Config     ProcWrapConfig
 }
 
-type ProcWrapConfig struct {
-	Network ProcWrapNetwork `json:"network"`
-}
-
-type ProcWrapNetwork struct {
-	NamespaceCidr string   `json:"namespaceCidr"`
-	DnsServers    []string `json:"dnsServers"`
+type NetworkConfig struct {
+	NamespaceCidr	string	`json:"namespaceCidr"`
+	DnsServers      []string	`json:"dnsServers"`
 }
 
 type ProcessContext struct {
@@ -29,6 +25,7 @@ type ProcessContext struct {
 	Environment map[string]string `json:"envVars"`
 	PropEnv     bool              `json:"propagateEnv"`
 	Files       []FileOverlay     `json:"files"`
+	Network     NetworkConfig	`json:"network"`
 }
 
 type FileOverlay struct {
