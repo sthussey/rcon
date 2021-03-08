@@ -14,8 +14,15 @@ type RunConfig struct {
 }
 
 type ProcessContext struct {
-	RunPath    string `json:"runPath"`
-	WorkingDir string `json:"workingDir"`
+	RunPath     string `json:"runPath"`
+	WorkingDir  string `json:"workingDir"`
+    Files       []FileOverlay `json:"files"`
+}
+
+type FileOverlay struct {
+    Path        string `json:"path"`
+    Content     string `json:"content"`
+    ContentType string `json:"contentType"`
 }
 
 func NewRunConfig(p string) (RunConfig, error) {
