@@ -22,7 +22,6 @@ type ProcessContext struct {
 type FileOverlay struct {
     Path        string `json:"path"`
     Content     string `json:"content"`
-    ContentType string `json:"contentType"`
 }
 
 func NewRunConfig(p string) (RunConfig, error) {

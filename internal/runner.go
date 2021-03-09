@@ -5,7 +5,6 @@ import (
 	"os"
     "runtime"
     "log"
-    "golang.org/x/sys/unix"
 )
 
 type ProcessRunner interface {
@@ -86,7 +85,8 @@ func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext) {
         log.Printf("Error initializing mount namespace: %v", err)
         return
     }
-    defer cleanMountNamespace(scratchPath)
+    setupMounts(scratchPath, pctx.Files)
+    defer cleanMountNamespace(scratchPath, pctx.Files)
 	pa := os.ProcAttr{Dir: pctx.WorkingDir, Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}}
 	p, err := os.StartProcess(pctx.RunPath, []string{pctx.RunPath}, &pa)
 	if err != nil {
@@ -103,33 +103,5 @@ func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext) {
 
     // Deliberately leave thread locked so it isn't used by any other goroutines
     // and is instead kileld
-    return
-}
-
-
-func initMountNamespace() (string, error) {
-    unix.Unshare(unix.CLONE_NEWNS)
-    tmpPath, err := os.MkdirTemp("", "")
-    if err != nil {
-        return "", fmt.Errorf("Error creating scratch mountpoint: %v", err)
-    }
-    err = unix.Mount("swap", tmpPath, "tmpfs", 0, "")
-    if err != nil {
-        return tmpPath, fmt.Errorf("Error mounting namespace scratch: %v", err)
-    }
-    return tmpPath, nil
-}
-
-func cleanMountNamespace(scratchPath string) {
-    err := unix.Unmount(scratchPath, 0)
-    if err != nil {
-        log.Printf("Error unmounting scratch: %v", err)
-        return
-    }
-    err = os.Remove(scratchPath)
-    if err != nil {
-        log.Printf("Error removing scratch mountpoint: %v", err)
-        return
-    }
     return
 }

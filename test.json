@@ -1,4 +1,5 @@
 {
-  "runPath": "/bin/df",
-  "workingDir": "/"
+  "runPath": "/usr/bin/dig",
+  "workingDir": "/",
+  "files": [{"path":"/etc/resolv.conf", "content":"nameserver 8.8.8.8\n"}]
 }
