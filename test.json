@@ -1,5 +1,9 @@
 {
-  "runPath": "/usr/bin/dig",
+  "runPath": ["/bin/ping","-c","4","8.8.8.8"],
   "workingDir": "/",
-  "files": [{"path":"/etc/resolv.conf", "content":"nameserver 8.8.8.8\n"}]
+  "files": [{"path":"/etc/resolv.conf", "content":"nameserver 8.8.8.8\n"}],
+  "network":{
+    "namespaceCidr": "172.16.0.1/24",
+    "dnsServers": ["8.8.8.8"]
+  }
 }

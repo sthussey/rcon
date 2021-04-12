@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	flag "github.com/spf13/pflag"
 	"fmt"
 	"os"
 
@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	configPath := flag.String("c", "", "Path to context config JSON file.")
+	configPath := flag.String("config", "", "Path to context config JSON file.")
+    dirtyExit := flag.Bool("dirty", false, "Don't clean up at exit to allow for debugging.")
 	flag.Parse()
 	//debug := flag.Bool("d", false, "Turn on debug logging.")
 	rc, err := internal.NewRunConfig(*configPath)
@@ -30,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	res := r.ExecuteContext(rc.RunContext)
+	res := r.ExecuteContext(rc.RunContext, *dirtyExit)
 
 	if res {
 		os.Exit(0)

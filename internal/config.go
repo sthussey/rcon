@@ -11,21 +11,28 @@ import (
 type RunConfig struct {
 	ConfigPath string
 	RunContext ProcessContext
-	Config     ProcWrapConfig
 }
 
 type NetworkConfig struct {
-	NamespaceCidr	string	`json:"namespaceCidr"`
+	NamespaceCidr	string      `json:"namespaceCidr"`
 	DnsServers      []string	`json:"dnsServers"`
 }
 
+func (nc NetworkConfig) resolvConf() string {
+    var rc strings.Builder
+    for _, s := range nc.DnsServers {
+       rc.WriteString(fmt.Sprintf("nameserver %s\n", s))
+    }
+    return rc.String()
+}
+
 type ProcessContext struct {
-	RunPath     string            `json:"runPath"`
-	WorkingDir  string            `json:"workingDir"`
-	Environment map[string]string `json:"envVars"`
-	PropEnv     bool              `json:"propagateEnv"`
-	Files       []FileOverlay     `json:"files"`
-	Network     NetworkConfig	`json:"network"`
+	RunPath     []string              `json:"runPath"`
+	WorkingDir  string              `json:"workingDir"`
+	Environment map[string]string   `json:"envVars"`
+	PropEnv     bool                `json:"propagateEnv"`
+	Files       []FileOverlay       `json:"files"`
+	Network     NetworkConfig       `json:"network"`
 }
 
 type FileOverlay struct {
@@ -90,7 +97,7 @@ func jsonParseConfig(src []byte) (*ProcessContext, error) {
 
 func envParseConfig(src map[string]string) (*ProcessContext, error) {
 	pctx := ProcessContext{}
-	pctx.RunPath = src["RCON_RUNPATH"]
+	pctx.RunPath = strings.Split(src["RCON_RUNPATH"], " ")
 	pctx.WorkingDir = src["RCON_WORKINGDIR"]
 	return &pctx, nil
 }

@@ -9,8 +9,9 @@ import (
 )
 
 type ProcessRunner interface {
+    MutateContext(p *ProcessContext) error
 	ValidateContext(p ProcessContext, errNoCap bool) []string
-	ExecuteContext(p ProcessContext) bool
+	ExecuteContext(p ProcessContext, dirtyExit bool) bool
 }
 
 type LocalRunner struct {
@@ -20,10 +21,16 @@ func NewLocalRunner(cfg map[string]string) ProcessRunner {
 	return LocalRunner{}
 }
 
+/// Make any internal changes to the context prior to validation
+func (r LocalRunner) MutateContext(p *ProcessContext) error {
+    return nil
+}
+
+/// Validate sanity of the context prior to attempt to execute it
 func (r LocalRunner) ValidateContext(p ProcessContext, errNoCap bool) []string {
 	failures := make([]string, 0)
 
-	msg := validateRunpath(p.RunPath)
+	msg := validateRunpath(p.RunPath[0])
 
 	if msg != "" {
 		failures = append(failures, msg)
@@ -106,14 +113,14 @@ func renderEnvironment(varMap map[string]string, prop []string) []string {
 	return procEnv
 }
 
-func (r LocalRunner) ExecuteContext(pctx ProcessContext) bool {
+func (r LocalRunner) ExecuteContext(pctx ProcessContext, dirty bool) bool {
 	doneChan := make(chan interface{})
-	go executeInIsolatedThread(doneChan, pctx)
+	go executeInIsolatedThread(doneChan, pctx, dirty)
 	<-doneChan
 	return true
 }
 
-func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext) {
+func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext, dirty bool) {
 	runtime.LockOSThread()
 	defer close(done)
 	scratchPath, err := initMountNamespace()
@@ -122,7 +129,17 @@ func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext) {
 		return
 	}
 	setupMounts(scratchPath, pctx.Files)
-	defer cleanMountNamespace(scratchPath, pctx.Files)
+    if(!dirty){
+	    defer cleanMountNamespace(scratchPath, pctx.Files)
+    }
+    pn, err := setupNetwork(pctx.Network)
+    if err != nil {
+        log.Printf("Error initializing process network: %v", err)
+        return
+    }
+    if(!dirty){
+        defer pn.teardown.teardown()
+    }
 	pa := os.ProcAttr{
 		Dir:   pctx.WorkingDir,
 		Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
@@ -134,7 +151,7 @@ func executeInIsolatedThread(done chan<- interface{}, pctx ProcessContext) {
 				return nil
 			}())}
 
-	p, err := os.StartProcess(pctx.RunPath, []string{pctx.RunPath}, &pa)
+	p, err := os.StartProcess(pctx.RunPath[0], pctx.RunPath, &pa)
 	if err != nil {
 		log.Printf("Error starting tended process: %v", err)
 		return
